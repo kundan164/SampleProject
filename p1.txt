@@ -1,0 +1,488 @@
+Data Type:-                 BAR-021                  US-DRUM55
+
+Standard data type
+-------------------------
+Complete
+--------
+D(date) length 8
+T(time) length 6
+I(integer) length 4
+F(floating) length 8
+STRING dynamic length character
+XSTRING dynamic byte sequence
+
+Incomplete
+----------
+C character string
+N numerical character
+X byte sequence
+P Packed Number 
+
+
+Local data type
+-------------------------
+Created locally in a program,
+Can be accessed by the program where it is defined.
+
+Using syntax : TYPES
+
+
+Global data type
+-------------------------
+Created Globally in data dictionary,
+Can be used globally throughout the entire
+SAP system.
+
+
+Elementary Data Object: - contain only 1 field.
+Structural Data Object :- contain multiple fields.
+
+Work Area :- It is a data Object for storing one record data 
+		 of the internal table.
+		temporary work place for processing the data.
+
+
+
+--------------------------------------
+Z75_EMP
+Z75_EMP_DESC
+Z75_SH
+Z75_SEARCH_HELP1
+EZ75_LOCK
+Z75_ALV     
+zr_alv_r         
+Z75_ALV1
+ZR_ALV_R4           Z46212117_SHADDOW, ZR_ASSIGN9_DEL
+
+------------------------------------------------------------------------------------------------------
+ADOBE FORM :-
+
+REPORT ZADOBE_NEW_PRG.
+
+DATA: ord TYPE vbak-kunnr.
+SELECT-OPTIONS: S_kunnr FOR ord OBLIGATORY.
+
+data: p_var type KUNAG,
+      P_adr type AD_ADDRNUM,
+      p_name TYPE AD_NAME1,
+      p_city type AD_CITY1,
+      p_post type AD_PSTCD1,
+      itnew type table of ZADOBE_STRU,
+      cp_outparam TYPE  sfpoutputparams,
+      ip_funcname TYPE  funcname,
+      lv_params1  TYPE  SFPDOCPARAMS.
+
+FIELD-SYMBOLS: <fs_new> type zadobe_stru.
+
+Select a~kunnr,
+       a~vbeln,
+       a~ernam,
+       b~posnr,
+       b~matnr,
+       d~addrnumber,
+       d~NAME1,
+       d~CITY1,
+       d~POST_CODE1
+ FROM vbak as a INNER JOIN vbap as b on ( a~vbeln = b~vbeln )
+                INNER JOIN kna1 as c on ( a~kunnr = c~kunnr )
+                INNER JOIN adrc as d on ( d~ADDRNUMBER = c~adrnr )
+ into TABLE @DATA(itab) "UP TO 20 ROWS.
+ where a~kunnr in @S_kunnr .
+
+sort itab by kunnr.
+
+
+CALL FUNCTION 'FP_JOB_OPEN'
+  CHANGING
+    ie_outputparams       =  cp_outparam
+* EXCEPTIONS
+*   CANCEL                = 1
+*   USAGE_ERROR           = 2
+*   SYSTEM_ERROR          = 3
+*   INTERNAL_ERROR        = 4
+*   OTHERS                = 5
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+CALL FUNCTION 'FP_FUNCTION_MODULE_NAME'
+  EXPORTING
+    i_name                     = 'ZADOBE_FORM_NEW'
+ IMPORTING
+   E_FUNCNAME                 = ip_funcname
+*   E_INTERFACE_TYPE           =
+*   EV_FUNCNAME_INBOUND        =
+          .
+
+loop at itab ASSIGNING FIELD-SYMBOL(<fs_tab>).
+if  p_var eq <fs_tab>-kunnr.
+APPEND INITIAL LINE TO itnew ASSIGNING <fs_new>.
+<fs_new>-vbeln = <fs_tab>-vbeln.
+  <fs_new>-ernam = <fs_tab>-ernam.
+   <fs_new>-posnr = <fs_tab>-posnr.
+    <fs_new>-matnr = <fs_tab>-matnr.
+
+else.
+ If p_var is not initial.
+
+
+CALL FUNCTION ip_funcname
+  EXPORTING
+   /1BCDWB/DOCPARAMS         = lv_params1
+    p_post                   = p_post
+    p_city                   = P_city
+    p_name                   = p_name
+   P_ADR                     = p_adr
+    kunnr                    = p_var
+   ITNEW                     = itnew
+* IMPORTING
+*   /1BCDWB/FORMOUTPUT       =
+* EXCEPTIONS
+*   USAGE_ERROR              = 1
+*   SYSTEM_ERROR             = 2
+*   INTERNAL_ERROR           = 3
+*   OTHERS                   = 4
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+CLEAR itnew.
+ENDIF.
+
+APPEND INITIAL LINE TO itnew  ASSIGNING <fs_new>.
+<fs_new>-vbeln = <fs_tab>-vbeln.
+  <fs_new>-ernam = <fs_tab>-ernam.
+   <fs_new>-posnr = <fs_tab>-posnr.
+    <fs_new>-matnr = <fs_tab>-matnr.
+    move <fs_tab>-kunnr to p_var.
+    move <fs_tab>-addrnumber to p_adr.
+    move <fs_tab>-name1 to p_name.
+    move <fs_tab>-city1 to p_city.
+    move <fs_tab>-post_code1 to p_post.
+endif.
+
+
+endloop.
+
+CALL FUNCTION 'FP_JOB_CLOSE'
+* IMPORTING
+*   E_RESULT             =
+ EXCEPTIONS
+   USAGE_ERROR          = 1
+   SYSTEM_ERROR         = 2
+   INTERNAL_ERROR       = 3
+   OTHERS               = 4
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+----------------------------------------------------------------------------------------
+
+ DATA : INDEX  TYPE I.
+
+  FIELD-SYMBOLS : <FS_EMP2> TYPE ZTA_EMP2 .
+
+  DATA : LTP_VAR TYPE I .
+
+
+*SELECT * FROM ZTA_EMP2 INTO TABLE @DATA(LTA_EMP2).
+
+
+*  LOOP AT LTA_EMP2 ASSIGNING <FS_EMP2>.
+     ZTA_EMP2-EMP_ID = SY-TABIX.
+*    READ TABLE LTA_EMP2 ASSIGNING <FS_EMP2> INDEX INDEX.
+*    IF <FS_EMP2> IS ASSIGNED.
+*      LTP_VAR = <FS_EMP2>-EMP_ID.
+*    ENDIF.
+*
+*  ENDLOOP.
+
+
+  ZTA_EMP2-CREATED_ON = SY-DATUM.
+*  LTP_VAR = LTP_VAR + 1 .
+*  ZTA_EMP2-EMP_ID = LTP_VAR.
+
+
+  DATA(LTP_LEN) = STRLEN( ZTA_EMP2-EMP_PHONE ).
+
+  SHIFT ZTA_EMP2-EMP_PHONE LEFT DELETING LEADING '0'.
+
+  DATA(LTP_LEN1) = STRLEN( ZTA_EMP2-EMP_PHONE ).
+  IF LTP_LEN1 <> 10.
+    MESSAGE 'Enter a valid 10 digit mobile number' TYPE 'E'.
+  ENDIF.
+
+
+value table.
+
+----------------------------------------------------------------------------------------------------------
+
+loop at lta_rows into ls_rows.
+        lf_row_index = ls_rows-index.
+        read table ta_sales into wa_sales index lf_row_index.
+        wa_sales1-vbeln = wa_sales-vbeln.
+        append wa_sales1 to ta_struct.
+      endloop.
+
+
+      select a~vbeln,
+             c~vbtyp_n
+        from vbak as a inner join vbfa as c on         "#EC CI_BUFFJOIN
+        a~vbeln = c~vbelv
+        into table @ta_delv
+        where c~vbtyp_n eq 'J'.
+
+      sort ta_delv.
+
+      loop at ta_struct into wa_sales1.
+        read table ta_delv into data(wa_delv) with key vbeln = wa_sales1-vbeln.
+
+        if sy-subrc = 0.
+          data(lv_index) = sy-tabix.
+          loop at ta_delv into wa_delv from lv_index.         "CI_NOORDER
+            if wa_sales1-vbeln <> wa_delv-vbeln.
+              exit.                                           "CI_NOORDER
+            else.
+              append wa_delv to ta_delv1.
+            endif.
+          endloop.
+        endif.
+      endloop.
+      clear ls_rows.
+
+      call screen '300'.
+  endcase.
+  clear sy-ucomm.
+===================================================================================
+
+START-OF-SELECTION.
+
+  DATA(o) = NEW lcl_sales( ).
+  o->fet_data( ).
+  o->fcat( ).
+
+  CALL SCREEN '200'.
+*&---------------------------------------------------------------------*
+*&      Module  STATUS_0200  OUTPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE status_0200 OUTPUT.
+ IF ref IS INITIAL.
+  CREATE OBJECT ref
+    EXPORTING
+      container_name              = 'CC1'
+    EXCEPTIONS
+      cntl_error                  = 1
+      cntl_system_error           = 2
+      create_error                = 3
+      lifetime_error              = 4
+      lifetime_dynpro_dynpro_link = 5
+      OTHERS                      = 6.
+  IF sy-subrc <> 0.
+*   MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+*              WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+  ENDIF.
+
+  CREATE OBJECT ref1
+    EXPORTING
+      i_parent          = ref
+    EXCEPTIONS
+      error_cntl_create = 1
+      error_cntl_init   = 2
+      error_cntl_link   = 3
+      error_dp_create   = 4
+      OTHERS            = 5.
+  IF sy-subrc <> 0.
+*   MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+*              WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+  ENDIF.
+
+  is_layout-sel_mode = 'A'.
+
+  CALL METHOD ref1->set_table_for_first_display
+    EXPORTING
+*      i_structure_name              = 'LTY_SALES'
+      is_layout                     = is_layout
+    CHANGING
+      it_outtab                     = ta_sales
+      it_fieldcatalog               = ta_fcat
+    EXCEPTIONS
+      invalid_parameter_combination = 1
+      program_error                 = 2
+      too_many_lines                = 3
+      OTHERS                        = 4.
+  IF sy-subrc <> 0.
+*  Implement suitable error handling here
+  ENDIF.
+ ELSE.
+   CALL METHOD ref1->refresh_table_display
+*      EXPORTING
+*        is_stable      =
+*        i_soft_refresh =
+*      EXCEPTIONS
+*        finished       = 1
+*        others         = 2
+      .
+    IF sy-subrc <> 0.
+*     Implement suitable error handling here
+    ENDIF.
+ ENDIF.
+
+  DATA : ref_event TYPE REF TO lcl_sales.
+
+  CREATE OBJECT ref_event.
+  SET HANDLER ref_event->event_hotspot_click FOR ref1.
+
+
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0200  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0200 INPUT.
+  CASE sy-ucomm.
+    WHEN 'EXIT'.
+      LEAVE TO SCREEN 0.
+  ENDCASE.
+
+  CASE sy-ucomm.
+    WHEN 'DELIVERY'.
+      CLEAR lta_rows.
+      CALL METHOD ref1->get_selected_rows
+        IMPORTING
+          et_index_rows = lta_rows.
+
+
+      LOOP AT lta_rows INTO ls_rows.
+        lf_row_index = ls_rows-index.
+        READ TABLE ta_sales INTO wa_sales INDEX lf_row_index.
+        wa_sales1-vbeln = wa_sales-vbeln.
+        APPEND wa_sales1 TO ta_struct.
+      ENDLOOP.
+
+
+      SELECT a~vbeln,
+             c~vbtyp_n
+        FROM vbak AS a INNER JOIN vbfa AS c ON         "#EC CI_BUFFJOIN
+        a~vbeln = c~vbelv
+        INTO TABLE @ta_delv
+        WHERE c~vbtyp_n EQ 'J'.
+
+      SORT ta_delv.
+
+      IF ta_delv1 IS NOT INITIAL.
+        CLEAR ta_delv1.
+      ENDIF.
+
+      LOOP AT ta_struct INTO wa_sales1.
+        READ TABLE ta_delv INTO DATA(wa_delv) WITH KEY vbeln = wa_sales1-vbeln.
+
+        IF sy-subrc = 0.
+          DATA(lv_index) = sy-tabix.
+          LOOP AT ta_delv INTO wa_delv FROM lv_index.         "CI_NOORDER
+            IF wa_sales1-vbeln <> wa_delv-vbeln.
+              EXIT.                                           "CI_NOORDER
+            ELSE.
+              APPEND wa_delv TO ta_delv1.
+            ENDIF.
+          ENDLOOP.
+        ENDIF.
+      ENDLOOP.
+      CLEAR ls_rows.
+      CLEAR ta_struct.
+
+      CALL SCREEN '300'.
+  ENDCASE.
+  CLEAR sy-ucomm.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  STATUS_0300  OUTPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE status_0300 OUTPUT.
+
+  CREATE OBJECT ref2
+    EXPORTING
+      container_name              = 'CC2'
+    EXCEPTIONS
+      cntl_error                  = 1
+      cntl_system_error           = 2
+      create_error                = 3
+      lifetime_error              = 4
+      lifetime_dynpro_dynpro_link = 5
+      OTHERS                      = 6.
+  IF sy-subrc <> 0.
+*   MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+*              WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+  ENDIF.
+
+  CREATE OBJECT ref3
+    EXPORTING
+      i_parent          = ref2
+    EXCEPTIONS
+      error_cntl_create = 1
+      error_cntl_init   = 2
+      error_cntl_link   = 3
+      error_dp_create   = 4
+      OTHERS            = 5.
+  IF sy-subrc <> 0.
+*   MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+*              WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+  ENDIF.
+
+  CALL METHOD ref3->set_table_for_first_display
+    EXPORTING
+*      i_structure_name              = 'LTY_DELV'
+      is_layout                     = is_layout
+    CHANGING
+      it_outtab                     = ta_delv1
+      it_fieldcatalog               = ta_fcat1
+    EXCEPTIONS
+      invalid_parameter_combination = 1
+      program_error                 = 2
+      too_many_lines                = 3
+      OTHERS                        = 4.
+  IF sy-subrc <> 0.
+*   Implement suitable error handling here
+  ENDIF.
+
+
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0300  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0300 INPUT.
+
+  CASE sy-ucomm.
+    WHEN 'BACK'.
+      LEAVE TO SCREEN 0.
+
+
+  ENDCASE.
+
+ENDMODULE.
+
+-----------------------------------------------------------------------------------------------------------
+
+Z1IDOC---->WE31
+ZMATIDOC---->WE30
+
+page- 176,197
+
+
+[2, 4, 6, 7, 8, 9, 7, 2] l= 8
+
+o(n2)
+
+
